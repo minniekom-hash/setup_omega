@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPTION TRADE | Omega Singularity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #02040a; color: #e2e8f0; }
+        .trading-card { background: linear-gradient(145deg, #0f172a, #02040a); border: 1px solid #1e293b; }
+        .verdict-ultimate { background-color: #065f46; color: #34d399; box-shadow: 0 0 20px rgba(52, 211, 153, 0.6); border: 1px solid #10b981; }
+        .verdict-high { background-color: #92400e; color: #fbbf24; }
+        .verdict-avoid { background-color: #7f1d1d; color: #f87171; }
+        .win-rate-glow { text-shadow: 0 0 20px rgba(59, 130, 246, 0.9); }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="text-center md:text-left">
+                <h1 class="text-4xl font-bold text-blue-500 tracking-tighter">OPTION TRADE <span class="text-sm bg-blue-900 text-blue-200 px-2 py-1 rounded ml-2">The Omega Singularity</span></h1>
+                <p class="text-slate-400 mt-2">ระบบวิเคราะห์สูงสุด: <span class="text-blue-300">Monte Carlo + Black-Scholes + IV Rank + Consensus Engine</span></p>
+            </div>
+            <div id="status" class="flex flex-col items-end gap-1 bg-slate-900 px-6 py-3 rounded-2xl border border-slate-700 text-sm font-mono">
+                <div class="text-slate-500">🇺🇸 US Time: <span id="us-time" class="text-white">--:--:--</span></div>
+                <div class="text-blue-400 font-bold">🇹🇭 เวลาไทย: <span id="th-time" class="text-white">--:--:--</span></div>
+            </div>
+        </header>
+        <div id="table-container" class="trading-card rounded-3xl shadow-2xl overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-900 text-slate-400 text-xs uppercase tracking-widest">
+                    <tr class="border-b border-slate-800">
+                        <th class="p-5">Ticker</th>
+                        <th class="p-5 text-center">Price</th>
+                        <th class="p-5 text-center">Type</th>
+                        <th class="p-5 text-center">Surgical Strike / TP / Exp</th>
+                        <th class="p-5 text-center text-blue-400 text-6xl">Win Rate (%)</th>
+                        <th class="p-5 text-center">Consensus</th>
+                        <th class="p-5 text-left">Quant Metrics & Catalyst</th>
+                    </tr>
+                </thead>
+                <tbody id="scanner-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        async function updateData() {
+            try {
+                const response = await fetch('/data');
+                const result = await response.json();
+                document.getElementById('us-time').innerText = result.time_us;
+                document.getElementById('th-time').innerText = result.time_th;
+                const body = document.getElementById('scanner-body');
+                body.innerHTML = '';
+                result.data.forEach(item => {
+                    const typeColor = item.type === 'Call' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300';
+                    const glowColor = item.type === 'Call' ? 'text-green-400' : 'text-red-400';
+                    let verdictClass = 'verdict-avoid';
+                    if(item.verdict === '🔥 ULTIMATE ALPHA') verdictClass = 'verdict-ultimate';
+                    else if(item.verdict === '⚡ HIGH POTENTIAL') verdictClass = 'verdict-high';
+                    body.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition-all">
+                            <td class="p-5 font-bold text-lg text-white">${item.ticker}</td>
+                            <td class="p-5 text-center font-mono text-slate-300">$${item.price}</td>
+                            <td class="p-5 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${typeColor}">${item.type}</span></td>
+                            <td class="p-5 text-center">
+                                <div class="font-bold text-blue-400 text-lg">S: $${item.strike} | TP: $${item.tp}</div>
+                                <div class="text-[10px] text-slate-500">Exp: ${item.expiry}</div>
+                            </td>
+                            <td class="p-5 text-center font-bold text-7xl ${glowColor} win-rate-glow">${item.winRate}</td>
+                            <td class="p-5 text-center"><span class="px-4 py-1 rounded-full text-xs font-bold ${verdictClass}">${item.verdict}</span></td>
+                            <td class="p-5">
+                                <div class="grid grid-cols-3 gap-2 mb-2 text-[10px] font-mono text-slate-400">
+                                    <span>Δ: ${item.delta}</span> <span>Γ: ${item.gamma}</span> <span>Θ: ${item.theta}</span>
+                                    <span>IV: ${item.iv}</span> <span>MC-Sim: High</span>
+                                </div>
+                                <div class="text-sm font-semibold text-blue-300 mb-1">${item.news}</div>
+                                <div class="text-xs text-slate-500">${item.reason}</div>
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+        setInterval(updateData, 15000);
+        updateData();
+    </script>
+</body>
+</html>
